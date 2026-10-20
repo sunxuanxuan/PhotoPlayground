@@ -1,12 +1,13 @@
 ---
 name: scenes-gathered-zine-v1-3
-description: "Transform a user-supplied photo into a vertical 3:5 Gathered Scenes Zine poster that anchors truthful photography inside a spacious source-derived abstract illustration field, aggressively compresses dense foliage and other micro-detail into a few large quiet forms, integrates one high-chroma hue as compositional structure, and preserves a visibly hand-torn fibrous photo-to-paper edge. Use when the user wants a tactile minimal paper collage with simplified illustration, active negative space, restrained English-default, Chinese, or bilingual micro-text, and an unmistakable but quiet torn-paper boundary."
+description: "Transform a user-supplied photo into a source-ratio Gathered Scenes Zine poster that preserves the first/main photo's exact aspect ratio and orientation, anchors truthful photography inside a spacious source-derived abstract illustration field, aggressively compresses dense foliage and other micro-detail into a few large quiet forms, integrates one high-chroma hue as compositional structure, and preserves a visibly hand-torn fibrous photo-to-paper edge. Use when the user wants a tactile minimal paper collage with simplified illustration, active negative space, restrained English-default, Chinese, or bilingual micro-text, and an unmistakable but quiet torn-paper boundary."
 ---
 
 # 拾景纸刊 · Gathered Scenes Zine v1.3
 
 Create a calm, tactile poster from a supplied photo. Preserve the signature **真景为锚、插画成场、色彩成结构、撕纸成界、纸面会呼吸**:
 
+- preserve the first/main photo's exact aspect ratio and orientation as a non-negotiable canvas invariant;
 - keep the photographic scene truthful;
 - let a larger abstract illustration field reinterpret selected source elements instead of tracing them;
 - compress foliage, branches, leaves, crowds, texture, and other complex detail into a few quiet graphic forms;
@@ -20,15 +21,16 @@ Return the generated image plus one brief creative rationale by default. Include
 
 Resolve conflicts in this order:
 
-1. Preserve the scene's identity and key spatial relationship.
-2. Keep the photographic portion truthful.
-3. Simplify complex organic or repetitive detail into a few large legible masses and directional gestures.
-4. Turn the illustration into a large designed field rather than a literal copy or small peripheral echo.
-5. Build photography, illustration, and one added hue on the same source-derived compositional skeleton.
-6. Use the added hue as chromatic structure that changes balance, movement, figure–ground, or meaning.
-7. Preserve substantial quiet space inside and around the enlarged illustration.
-8. Preserve a tactile hand-torn photo edge at the primary material handoff.
-9. Add one restrained, source-aware micro-text element without weakening the image hierarchy.
+1. Preserve the first/main photo's exact aspect ratio and orientation; a secondary reference image never controls the canvas.
+2. Preserve the scene's identity and key spatial relationship.
+3. Keep the photographic portion truthful.
+4. Simplify complex organic or repetitive detail into a few large legible masses and directional gestures.
+5. Turn the illustration into a large designed field rather than a literal copy or small peripheral echo.
+6. Build photography, illustration, and one added hue on the same source-derived compositional skeleton.
+7. Use the added hue as chromatic structure that changes balance, movement, figure–ground, or meaning.
+8. Preserve substantial quiet space inside and around the enlarged illustration.
+9. Preserve a tactile hand-torn photo edge at the primary material handoff.
+10. Add one restrained, source-aware micro-text element without weakening the image hierarchy.
 
 Preserve relationships before details. Remove detail before adding decoration.
 
@@ -44,6 +46,7 @@ Preserve relationships before details. Remove detail before adding decoration.
 
 Build an internal **Scene Card**:
 
+- **Canvas invariant:** the first/main photo's exact width-to-height ratio and whether it is landscape, portrait, or square; secondary reference images must not change it.
 - **Core subjects:** the 1–2 elements that make the scene identifiable.
 - **Supporting elements:** 2–3 elements that establish place or atmosphere.
 - **Spatial invariants:** horizon, relative positions, scale, perspective, facing direction, path, silhouette, or overlap that must survive.
@@ -60,7 +63,7 @@ Treat the photo as the factual source. Treat the illustration as an interpretati
 
 Resolve these visible fields in order:
 
-1. **Canvas:** ratio, paper surface, flat scan, and absence of mockup framing.
+1. **Canvas:** lock the output to the first/main photo's exact width-to-height ratio and orientation, then resolve paper surface, flat scan, and absence of mockup framing; ignore any secondary reference image's ratio.
 2. **Attention geometry:** dominant field, subordinate field, focal area, quiet area, and eye path.
 3. **Scene invariants:** exact relationships that must remain recognizable.
 4. **Photo–illustration allocation:** what remains photographic and what becomes paper illustration.
@@ -153,6 +156,15 @@ Preserve scene identity through:
 The illustration may simplify anatomy, texture, scale, and minor perspective. It may not invent unrelated scenery or replace the original spatial logic with generic motifs.
 
 ## Composition System
+
+### Canvas Ratio and Orientation
+
+- The output canvas must preserve the first/main photo's exact width-to-height ratio and orientation.
+- A landscape main photo must produce a landscape poster, a portrait main photo must produce a portrait poster, and a square main photo must produce a square poster.
+- Never normalize the canvas to `3:5`, `3:4`, `4:5`, `2:3`, or another standard poster ratio unless that is already the main photo's ratio.
+- Treat any secondary image only as a style, color, composition-language, or layout reference. Its dimensions, crop, and orientation must not control the output canvas.
+- Adapt photo allocation, illustration extent, negative space, torn-paper direction, color movement, and text placement inside the source-ratio canvas.
+- Do not rotate, stretch, letterbox, pillarbox, or aggressively crop the main photo merely to simulate another ratio. If any instruction conflicts with this rule, the main photo's canvas ratio wins.
 
 ### Art-Theory Basis
 
@@ -247,7 +259,7 @@ Mentally remove the added hue. If the eye path, visual balance, figure–ground 
 
 ## Visual Language
 
-- Use a vertical 3:5 paper-poster canvas unless the user requests another ratio.
+- Use a paper-poster canvas with exactly the same aspect ratio and orientation as the first/main photo; never let a secondary reference image or a poster-format default override it.
 - Use warm cream aged paper with matte fibers, restrained speckles, weathering, torn edges, scan noise, and flat print texture.
 - Preserve the photograph's natural color atmosphere and recognizable geometry.
 - Render the illustration with selective woodcut, photocopy, halftone, xerox, risograph, letterpress, or cut-paper treatment.
@@ -313,7 +325,7 @@ Use this selection order:
 
 Write the final prompt as four compact paragraphs:
 
-1. **Canvas and attention geometry:** ratio, layout, photo/illustration shares, focal area, quiet field, eye path, and reserved text area.
+1. **Canvas and attention geometry:** explicitly state that the first/main photo's exact aspect ratio and orientation are locked, then resolve layout, photo/illustration shares, focal area, quiet field, eye path, and reserved text area inside that canvas.
 2. **Scene fidelity:** core subjects, spatial invariants, and what remains photographic.
 3. **Illustration field, chromatic structure, torn edge, and micro-text:** retain/merge/omit/transform/expose decisions; illustration grammar, complexity-compression target, field extent, and active density; chromatic integration mode, source shape, exact hue, material, opacity, function, and area; visible hand-torn contour, fibrous band, affected perimeter, and subordinate residue; exact text, language mode, form, separator, hierarchy, lettering, ink value, scale, and placement.
 4. **Reproduction mood and constraints:** paper/scan texture, emotional atmosphere, text legibility, and hard avoids.
@@ -323,25 +335,27 @@ Use decisive language. State which details must disappear as clearly as which fo
 ## Generation Workflow
 
 1. Inspect the supplied photo.
-2. Build the Scene Card and identify the semantic minimum.
-3. Choose the focal area and intended eye path.
-4. Extract one or two source shapes that can organize photography, illustration, and color together.
-5. Select a source-driven composition and set initial photo/illustration field ranges, then correct by visual weight.
-6. Build the Abstraction Map.
-7. Choose one primary illustration grammar; apply foliage and micro-detail compression when needed, enlarge the field before increasing detail, then set active density and quiet-paper share.
-8. Choose one chromatic integration mode, exact hue, source shape, material, opacity, function, and area; apply the structural removal test.
-9. Build a visible hand-torn fibrous edge at the main photo–paper handoff; set its contour, fiber band, affected perimeter, and only then add any subordinate speckles or ghost marks.
-10. Resolve the language mode, text form, exact micro-text, separator system, hierarchy, and quiet-paper placement; use supplied wording verbatim when available, otherwise default to English-only.
-11. Compile the four-paragraph final prompt.
-12. Generate with the supplied photo as reference.
-13. Inspect at normal and thumbnail scale.
-14. Regenerate once with a targeted correction if necessary.
-15. Return the generated image plus one brief creative rationale; include the prompt or detailed notes only when the user asks.
+2. Lock the output canvas to the first/main photo's exact aspect ratio and orientation; explicitly reject ratio influence from any secondary reference image.
+3. Build the Scene Card and identify the semantic minimum.
+4. Choose the focal area and intended eye path.
+5. Extract one or two source shapes that can organize photography, illustration, and color together.
+6. Select a source-driven composition and set initial photo/illustration field ranges, then correct by visual weight.
+7. Build the Abstraction Map.
+8. Choose one primary illustration grammar; apply foliage and micro-detail compression when needed, enlarge the field before increasing detail, then set active density and quiet-paper share.
+9. Choose one chromatic integration mode, exact hue, source shape, material, opacity, function, and area; apply the structural removal test.
+10. Build a visible hand-torn fibrous edge at the main photo–paper handoff; set its contour, fiber band, affected perimeter, and only then add any subordinate speckles or ghost marks.
+11. Resolve the language mode, text form, exact micro-text, separator system, hierarchy, and quiet-paper placement; use supplied wording verbatim when available, otherwise default to English-only.
+12. Compile the four-paragraph final prompt.
+13. Generate with the supplied photo as reference.
+14. Inspect at normal and thumbnail scale, including a direct canvas-ratio comparison with the main photo.
+15. Regenerate once with a targeted correction if necessary.
+16. Return the generated image plus one brief creative rationale; include the prompt or detailed notes only when the user asks.
 
 ## Targeted Correction
 
 Regenerate at most once, correcting only the observed failure:
 
+- **Aspect-ratio drift:** restore the first/main photo's exact width-to-height ratio and orientation; rebuild the layout inside that canvas without stretching, rotating, letterboxing, or letting a secondary reference image set the ratio.
 - **Scene loss:** restore the missing spatial invariant or source-specific form.
 - **Over-literal illustration:** remove at least half the remaining detail, merge forms, break contours, and enlarge quiet paper.
 - **Dense foliage:** collapse individual leaves, needles, and fine twigs into one main mass, one to three branch gestures, and at most two secondary clusters.
@@ -358,7 +372,7 @@ Regenerate at most once, correcting only the observed failure:
 
 ## Hard Avoids
 
-Avoid literal traced illustration, individual leaf-by-leaf or needle-by-needle rendering, dense branch filigree, lace-like botanical illustration, repeated organic marks covering the field, timid peripheral illustration, full-scene photocopy, evenly detailed woodcut rendering, dense hatching everywhere, complete object outlines, filler decoration, generic abstract motifs, detached corner color blocks, isolated brush swatches, arbitrary bright dots, generic geometric accents unrelated to the source, color added after the composition is solved, clean digital photo masks, crisp rectangular clipping, sticker-like white outlines, decorative uniform deckled frames, heavy paper shadows, curled corners, dense scrapbooking, uniform dotted borders, repeated decorative icons, legible pseudo-symbol systems, multiple competing illustration styles, multiple added hues, commercial advertising hierarchy, logos, CTA, glossy mockups, neon, 3D, cinematic lighting, depth of field, fashion-editorial drama, cute cartoon or anime treatment, excessive sharpening, AI smoothing, large or polished digital typography, bold display all-caps, keyword spam, mixed decorative separators, illegible or misspelled text, long text blocks, invented quotations or attributions, faux metadata, and watermarks.
+Avoid forced portrait or landscape conversion, arbitrary standard poster ratios, secondary-reference-driven canvas ratios, rotation, stretching, letterboxing, pillarboxing, or aggressive cropping used to fake another ratio; literal traced illustration, individual leaf-by-leaf or needle-by-needle rendering, dense branch filigree, lace-like botanical illustration, repeated organic marks covering the field, timid peripheral illustration, full-scene photocopy, evenly detailed woodcut rendering, dense hatching everywhere, complete object outlines, filler decoration, generic abstract motifs, detached corner color blocks, isolated brush swatches, arbitrary bright dots, generic geometric accents unrelated to the source, color added after the composition is solved, clean digital photo masks, crisp rectangular clipping, sticker-like white outlines, decorative uniform deckled frames, heavy paper shadows, curled corners, dense scrapbooking, uniform dotted borders, repeated decorative icons, legible pseudo-symbol systems, multiple competing illustration styles, multiple added hues, commercial advertising hierarchy, logos, CTA, glossy mockups, neon, 3D, cinematic lighting, depth of field, fashion-editorial drama, cute cartoon or anime treatment, excessive sharpening, AI smoothing, large or polished digital typography, bold display all-caps, keyword spam, mixed decorative separators, illegible or misspelled text, long text blocks, invented quotations or attributions, faux metadata, and watermarks.
 
 ## Output Format
 
@@ -387,6 +401,7 @@ If the user explicitly requests the prompt or detailed explanation, add only the
 
 Before returning, verify:
 
+- Does the output canvas match the first/main photo's exact aspect ratio and orientation, independent of any secondary reference image?
 - Does the result still read as the supplied scene?
 - Are the semantic minimum and key spatial relationship recognizable?
 - Is the photographic section truthful?

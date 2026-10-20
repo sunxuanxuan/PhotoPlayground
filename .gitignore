@@ -6,3 +6,11 @@ out
 tsconfig.tsbuildinfo
 .env
 .env.local
+.data/generation-history/
+.data/background-presets/
+.data/provider-settings.json
+.data/provider-settings.json.*.tmp
+.dbg/
+__pycache__/
+*.py[cod]
+/debug-background-replace-latency.md
