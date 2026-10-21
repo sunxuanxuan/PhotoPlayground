@@ -37,6 +37,12 @@ import {
     GenerationHistoryItem,
     GenerationHistoryListResponse,
 } from "@/lib/generation-history-types";
+import {
+    GenerationTask,
+    GenerationTaskListResponse,
+    GenerationTaskStatus,
+    isActiveGenerationTask,
+} from "@/lib/generation-task-types";
 import { ProviderSettingsView } from "@/lib/provider-settings-types";
 import { SkillMetadata } from "@/lib/skill-types";
 import {
@@ -102,31 +108,11 @@ type ProcessResultItem = {
   error?: string;
 };
 
-type BatchStreamEvent =
-  | {
-      type: "result";
-      index: number;
-      fileName: string;
-      result: {
-        imageUrl: string;
-        providerModel?: string;
-        size?: string;
-        historyItem?: GenerationHistoryItem;
-      };
-    }
-  | {
-      type: "error";
-      index: number;
-      fileName: string;
-      error: string;
-      status: number;
-    }
-  | {
-      type: "complete";
-      total: number;
-      succeeded: number;
-      failed: number;
-    };
+type CompletionNotice = {
+  message: string;
+  canOpenHistory: boolean;
+  historyItemId?: string;
+};
 
 type WorkbenchCopy = {
   mainImageLabel: string;
@@ -186,6 +172,34 @@ async function fetchGenerationHistory(): Promise<GenerationHistoryListResponse> 
     throw new Error(result.error ?? "历史记录读取失败");
   }
   return result;
+}
+
+async function fetchGenerationTasks(): Promise<GenerationTaskListResponse> {
+  const response = await fetch("/api/generation-tasks", { cache: "no-store" });
+  const result = (await response.json()) as GenerationTaskListResponse & {
+    error?: string;
+  };
+  if (!response.ok || !Array.isArray(result.tasks)) {
+    throw new Error(result.error ?? "后台任务读取失败");
+  }
+  return result;
+}
+
+function formatTaskTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "刚刚";
+  return new Intl.DateTimeFormat("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getTaskStatusLabel(status: GenerationTaskStatus) {
+  if (status === "queued") return "等待中";
+  if (status === "processing") return "生成中";
+  if (status === "completed") return "已完成";
+  if (status === "partial") return "部分完成";
+  return "失败";
 }
 
 const FLAT_PAPER_CUT_PROMPT_PRESETS: PromptPreset[] = [
@@ -334,13 +348,19 @@ export function PhotoWorkbench() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const skillFileRef = useRef<HTMLInputElement>(null);
   const sourceImagesRef = useRef<SourceImage[]>([]);
+  const taskStatusesRef = useRef(new Map<string, GenerationTaskStatus>());
+  const taskPollingInitializedRef = useRef(false);
   const [sourceImages, setSourceImages] = useState<SourceImage[]>([]);
   const [referenceFile, setReferenceFile] = useState<File | null>(null);
   const [referenceUrl, setReferenceUrl] = useState("");
   const [isReferenceOnTop, setIsReferenceOnTop] = useState(false);
   const [processResults, setProcessResults] = useState<ProcessResultItem[]>([]);
   const [status, setStatus] = useState<Status>("empty");
-  const [processingSeconds, setProcessingSeconds] = useState(0);
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false);
+  const [generationTasks, setGenerationTasks] = useState<GenerationTask[]>([]);
+  const [taskPanelOpen, setTaskPanelOpen] = useState(false);
+  const [completionNotice, setCompletionNotice] =
+    useState<CompletionNotice | null>(null);
   const [prompt, setPrompt] = useState("");
   const [strength, setStrength] = useState(72);
   const [isDragging, setIsDragging] = useState(false);
@@ -410,9 +430,7 @@ export function PhotoWorkbench() {
     (result) => result.status === "complete" && result.imageUrl,
   );
   const resultUrl = successfulResults[0]?.imageUrl ?? "";
-  const processedCount = processResults.filter(
-    (result) => result.status !== "processing",
-  ).length;
+  const activeGenerationTasks = generationTasks.filter(isActiveGenerationTask);
   const hasBrowserConfig = Boolean(arkSettings.apiKey);
   const hasConfiguredProvider =
     hasBrowserConfig ||
@@ -522,14 +540,76 @@ export function PhotoWorkbench() {
   }, [toast]);
 
   useEffect(() => {
-    if (status !== "processing") return;
+    let cancelled = false;
 
-    const timer = window.setInterval(
-      () => setProcessingSeconds((seconds) => seconds + 1),
-      1_000,
-    );
-    return () => window.clearInterval(timer);
-  }, [status]);
+    async function pollTasks() {
+      try {
+        const result = await fetchGenerationTasks();
+        if (cancelled) return;
+
+        const newlyFinished = taskPollingInitializedRef.current
+          ? result.tasks.filter((task) => {
+              const previous = taskStatusesRef.current.get(task.id);
+              return (
+                (previous === "queued" || previous === "processing") &&
+                !isActiveGenerationTask(task)
+              );
+            })
+          : [];
+
+        taskStatusesRef.current = new Map(
+          result.tasks.map((task) => [task.id, task.status]),
+        );
+        taskPollingInitializedRef.current = true;
+        setGenerationTasks(result.tasks);
+
+        if (newlyFinished.length === 0) return;
+        const successfulTasks = newlyFinished.filter(
+          (task) => task.succeeded > 0,
+        );
+        if (successfulTasks.length > 0) {
+          const succeeded = successfulTasks.reduce(
+            (total, task) => total + task.succeeded,
+            0,
+          );
+          const latest = successfulTasks[0];
+          setCompletionNotice({
+            message:
+              newlyFinished.length === 1
+                ? `${succeeded} 个生成结果已完成并保存到历史任务`
+                : `${successfulTasks.length} 个后台任务已完成，共保存 ${succeeded} 个结果`,
+            canOpenHistory: true,
+            historyItemId: latest.latestHistoryItemId,
+          });
+          void fetchGenerationHistory()
+            .then((history) => {
+              if (cancelled) return;
+              setHistoryItems(history.items);
+              setHistoryLimit(history.limit);
+            })
+            .catch(() => undefined);
+          return;
+        }
+
+        setCompletionNotice({
+          message:
+            newlyFinished.length === 1
+              ? "后台生成任务失败，可打开任务面板查看原因"
+              : `${newlyFinished.length} 个后台生成任务失败`,
+          canOpenHistory: false,
+        });
+      } catch {
+        // A transient polling failure should not interrupt the editing flow.
+      }
+    }
+
+    void pollTasks();
+    const timer = window.setInterval(() => void pollTasks(), 2_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     function parseSettings(raw: string | null): ArkClientSettings | null {
@@ -698,17 +778,17 @@ export function PhotoWorkbench() {
 
   function openHistory() {
     setSettingsOpen(false);
+    setTaskPanelOpen(false);
     setHistoryOpen(true);
     void loadHistory();
   }
 
-  function rememberHistoryItem(item: GenerationHistoryItem | undefined) {
-    if (!item) return;
-    setHistoryItems((current) => [
-      item,
-      ...current.filter((candidate) => candidate.id !== item.id),
-    ].slice(0, historyLimit));
-    setSelectedHistoryId(item.id);
+  function openCompletedTaskHistory() {
+    if (completionNotice?.historyItemId) {
+      setSelectedHistoryId(completionNotice.historyItemId);
+    }
+    setCompletionNotice(null);
+    openHistory();
   }
 
   function selectWardrobePreset(wardrobePresetId: string | null) {
@@ -1243,169 +1323,24 @@ export function PhotoWorkbench() {
     }
   }
 
-  async function processBatchImages(cleanPrompt: string) {
-    let succeeded = 0;
-    let failed = 0;
-    const completedIndexes = new Set<number>();
-
-    try {
-      const form = new FormData();
-      sourceImages.forEach((source) => form.append("images", source.file));
-      if (referenceFile) form.set("referenceImage", referenceFile);
-      form.set("prompt", cleanPrompt);
-      form.set("modelId", selectedModelId);
-      if (usesGeneralBackgroundPrompt) {
-        form.set("backgroundPresetId", GENERAL_BACKGROUND_PRESET_ID);
-      }
-      if (
-        WARDROBE_FEATURE_ENABLED &&
-        isBackgroundReplace &&
-        !usesGeneralBackgroundPrompt &&
-        selectedWardrobePresetId
-      ) {
-        form.set("wardrobePresetId", selectedWardrobePresetId);
-      }
-      if (supportsGuidance) {
-        form.set("strength", String(strength));
-        form.set(
-          "disabledSkillNames",
-          JSON.stringify(activeDisabledSkillNames),
-        );
-      }
-
-      const response = await fetch("/api/process/batch", {
-        method: "POST",
-        headers: createArkRequestHeaders(arkSettings),
-        body: form,
-      });
-      if (!response.ok) {
-        throw new Error(
-          await readResponseError(response, "批量图片处理失败"),
-        );
-      }
-      if (!response.body) {
-        throw new Error("浏览器无法读取批量处理结果流");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      const handleEvent = (event: BatchStreamEvent) => {
-        if (event.type === "complete") return;
-        if (
-          !Number.isInteger(event.index) ||
-          event.index < 0 ||
-          event.index >= sourceImages.length ||
-          completedIndexes.has(event.index)
-        ) {
-          return;
-        }
-        completedIndexes.add(event.index);
-
-        if (event.type === "result" && event.result.imageUrl) {
-          succeeded += 1;
-          setProcessResults((current) =>
-            current.map((item, index) =>
-              index === event.index
-                ? {
-                    ...item,
-                    status: "complete",
-                    imageUrl: event.result.imageUrl,
-                    providerModel: event.result.providerModel,
-                    size: event.result.size,
-                    historyItem: event.result.historyItem,
-                    error: undefined,
-                  }
-                : item,
-            ),
-          );
-          rememberHistoryItem(event.result.historyItem);
-          return;
-        }
-
-        failed += 1;
-        const itemError =
-          event.type === "error" ? event.error : "图片模型未返回结果";
-        setProcessResults((current) =>
-          current.map((item, index) =>
-            index === event.index
-              ? { ...item, status: "error", error: itemError }
-              : item,
-          ),
-        );
-      };
-
-      const consumeLines = (flush = false) => {
-        const lines = buffer.split("\n");
-        buffer = flush ? "" : (lines.pop() ?? "");
-        lines.forEach((line) => {
-          if (!line.trim()) return;
-          handleEvent(JSON.parse(line) as BatchStreamEvent);
-        });
-        if (flush && buffer.trim()) {
-          handleEvent(JSON.parse(buffer) as BatchStreamEvent);
-          buffer = "";
-        }
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        consumeLines();
-      }
-      buffer += decoder.decode();
-      if (buffer.trim()) {
-        handleEvent(JSON.parse(buffer) as BatchStreamEvent);
-      }
-
-      const missingIndexes = sourceImages
-        .map((_, index) => index)
-        .filter((index) => !completedIndexes.has(index));
-      if (missingIndexes.length > 0) {
-        failed += missingIndexes.length;
-        const missingSet = new Set(missingIndexes);
-        setProcessResults((current) =>
-          current.map((item, index) =>
-            missingSet.has(index)
-              ? { ...item, status: "error", error: "结果流提前结束，请重试" }
-              : item,
-          ),
-        );
-      }
-
-      setStatus(succeeded > 0 ? "complete" : "ready");
-      if (succeeded > 0) {
-        setToast(`${succeeded} 张图片生成完成`);
-      }
-      if (failed > 0) {
-        setError(
-          `${failed} 张图片处理失败，已保留 ${succeeded} 张成功结果`,
-        );
-      }
-    } catch (caught) {
-      const message = caught instanceof Error ? caught.message : "批量图片处理失败";
-      const unresolvedCount = sourceImages.length - succeeded - failed;
-      failed += Math.max(0, unresolvedCount);
-      setProcessResults((current) =>
-        current.map((item) =>
-          item.status === "processing"
-            ? { ...item, status: "error", error: message }
-            : item,
-        ),
-      );
-      setStatus(succeeded > 0 ? "complete" : "ready");
-      setError(message);
-    }
+  function resetWorkspaceAfterTaskSubmission() {
+    sourceImages.forEach((source) => URL.revokeObjectURL(source.previewUrl));
+    if (referenceUrl) URL.revokeObjectURL(referenceUrl);
+    setSourceImages([]);
+    setReferenceFile(null);
+    setReferenceUrl("");
+    setSelectedBackgroundPresetId(null);
+    setBackgroundPromptIsComposed(false);
+    setSelectedWardrobePresetId(null);
+    setPrompt("");
+    setIsReferenceOnTop(false);
+    setProcessResults([]);
+    setStatus("empty");
   }
 
-  async function processSingleImage(
-    source: SourceImage,
-    cleanPrompt: string,
-  ) {
+  async function submitGenerationTask(cleanPrompt: string) {
     const form = new FormData();
-    form.set("image", source.file);
+    sourceImages.forEach((source) => form.append("images", source.file));
     if (referenceFile) form.set("referenceImage", referenceFile);
     form.set("prompt", cleanPrompt);
     form.set("modelId", selectedModelId);
@@ -1432,45 +1367,32 @@ export function PhotoWorkbench() {
       form.set("disabledSkillNames", JSON.stringify(activeDisabledSkillNames));
     }
 
-    try {
-      const response = await fetch("/api/process", {
-        method: "POST",
-        headers: createArkRequestHeaders(arkSettings),
-        body: form,
-      });
-      const result = (await response.json()) as {
-        imageUrl?: string;
-        providerModel?: string;
-        size?: string;
-        historyItem?: GenerationHistoryItem;
-        error?: string;
-      };
-      if (!response.ok || !result.imageUrl) {
-        throw new Error(result.error ?? "图片处理失败");
-      }
-
-      setProcessResults([
-        {
-          sourceId: source.id,
-          fileName: source.file.name,
-          status: "complete",
-          imageUrl: result.imageUrl,
-          providerModel: result.providerModel,
-          size: result.size,
-          historyItem: result.historyItem,
-        },
-      ]);
-      rememberHistoryItem(result.historyItem);
-      setStatus("complete");
-      setToast(modeCopy.completionToast);
-    } catch (caught) {
-      setProcessResults([]);
-      setStatus("ready");
-      setError(caught instanceof Error ? caught.message : "图片处理失败");
+    const response = await fetch("/api/generation-tasks", {
+      method: "POST",
+      headers: createArkRequestHeaders(arkSettings),
+      body: form,
+    });
+    const result = (await response.json()) as {
+      task?: GenerationTask;
+      error?: string;
+    };
+    if (!response.ok || !result.task) {
+      throw new Error(result.error ?? "后台任务提交失败");
     }
+
+    taskStatusesRef.current.set(result.task.id, result.task.status);
+    setGenerationTasks((current) => [
+      result.task!,
+      ...current.filter((task) => task.id !== result.task!.id),
+    ]);
+    resetWorkspaceAfterTaskSubmission();
+    setToast(
+      `${result.task.total} 张图片已进入后台，可以继续创建下一个任务`,
+    );
   }
 
   async function processImage() {
+    if (isSubmittingTask) return;
     if (!file) {
       inputRef.current?.click();
       return;
@@ -1488,20 +1410,13 @@ export function PhotoWorkbench() {
     }
 
     setError("");
-    setStatus("processing");
-    setProcessingSeconds(0);
-    setProcessResults(
-      (isBatchMode ? sourceImages : sourceImages.slice(0, 1)).map((source) => ({
-        sourceId: source.id,
-        fileName: source.file.name,
-        status: "processing",
-      })),
-    );
-
-    if (isBatchMode) {
-      await processBatchImages(cleanPrompt);
-    } else {
-      await processSingleImage(sourceImages[0], cleanPrompt);
+    setIsSubmittingTask(true);
+    try {
+      await submitGenerationTask(cleanPrompt);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "后台任务提交失败");
+    } finally {
+      setIsSubmittingTask(false);
     }
   }
 
@@ -1588,8 +1503,6 @@ export function PhotoWorkbench() {
     headingSubtitle,
     placeholderText,
     generateButtonText,
-    processingText,
-    processingSubText,
     missingUploadText,
   } = modeCopy;
 
@@ -1605,6 +1518,19 @@ export function PhotoWorkbench() {
           {headerTitle}
         </div>
         <div className="topbar-actions">
+          <button
+            className={`task-trigger ${activeGenerationTasks.length > 0 ? "active" : ""}`}
+            type="button"
+            onClick={() => setTaskPanelOpen((open) => !open)}
+            aria-label="查看后台生成任务"
+            aria-expanded={taskPanelOpen}
+          >
+            <Sparkles size={16} />
+            <span>后台任务</span>
+            {activeGenerationTasks.length > 0 && (
+              <b>{activeGenerationTasks.length}</b>
+            )}
+          </button>
           <button
             className="history-trigger"
             type="button"
@@ -1627,6 +1553,76 @@ export function PhotoWorkbench() {
           </button>
         </div>
       </header>
+
+      {taskPanelOpen && (
+        <section className="task-popover" role="dialog" aria-label="后台生成任务">
+          <div className="task-popover-header">
+            <div>
+              <strong>后台生成任务</strong>
+              <small>
+                {activeGenerationTasks.length > 0
+                  ? `${activeGenerationTasks.length} 个任务正在进行，可继续创建新任务`
+                  : "当前没有进行中的任务"}
+              </small>
+            </div>
+            <button
+              type="button"
+              onClick={() => setTaskPanelOpen(false)}
+              aria-label="关闭后台任务"
+            >
+              <X size={15} />
+            </button>
+          </div>
+          {generationTasks.length === 0 ? (
+            <div className="task-popover-empty">
+              <Sparkles size={18} />
+              <span>提交生成后，任务进度会显示在这里</span>
+            </div>
+          ) : (
+            <div className="task-list">
+              {generationTasks.slice(0, 8).map((task) => {
+                const model = MODELS.find((item) => item.id === task.modelId);
+                const isActive = isActiveGenerationTask(task);
+                return (
+                  <article className={`task-item ${task.status}`} key={task.id}>
+                    <div className="task-item-heading">
+                      <span>
+                        <strong>{model?.name ?? task.modelId}</strong>
+                        <small>
+                          {formatTaskTime(task.createdAt)} · {task.total} 张
+                        </small>
+                      </span>
+                      <b>{getTaskStatusLabel(task.status)}</b>
+                    </div>
+                    <div className={`task-progress ${isActive ? "active" : ""}`}>
+                      <i style={{ width: `${task.progress}%` }} />
+                    </div>
+                    <div className="task-item-meta">
+                      <span>{task.stage}</span>
+                      <span>{task.completed}/{task.total}</span>
+                    </div>
+                    {task.error && <p>{task.error}</p>}
+                    {task.succeeded > 0 && !isActive && (
+                      <button
+                        className="task-history-link"
+                        type="button"
+                        onClick={() => {
+                          if (task.latestHistoryItemId) {
+                            setSelectedHistoryId(task.latestHistoryItemId);
+                          }
+                          openHistory();
+                        }}
+                      >
+                        <HistoryIcon size={13} /> 在历史任务中查看
+                      </button>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="workspace">
         <section className="stage-panel" aria-label="照片预览区">
@@ -1975,9 +1971,7 @@ export function PhotoWorkbench() {
               {/* Action bar */}
               <div className="result-actions">
                 <div className="result-state">
-                  {status === "processing" ? (
-                    <><span className="live-icon" /> 已完成 {processedCount}/{isBatchMode ? sourceImages.length : 1}</>
-                  ) : successfulResults.length > 0 ? (
+                  {successfulResults.length > 0 ? (
                     <><span className="complete-icon"><Check size={14} /></span> 已生成 {successfulResults.length} 张高清结果</>
                   ) : (
                     <><span className="live-icon" /> 等待生成</>
@@ -2497,13 +2491,11 @@ export function PhotoWorkbench() {
             <button
               className="generate-button"
               onClick={() => void processImage()}
-              disabled={status === "processing"}
+              disabled={isSubmittingTask}
             >
               <WandSparkles size={18} />
-              {status === "processing"
-                ? isBatchMode
-                  ? `并行处理中 ${processedCount}/${sourceImages.length}`
-                  : "处理中..."
+              {isSubmittingTask
+                ? "正在提交后台任务..."
                 : canGenerate()
                   ? isBatchMode
                     ? `${generateButtonText} · ${sourceImages.length} 张`
@@ -2513,29 +2505,6 @@ export function PhotoWorkbench() {
             </button>
           </div>
         </aside>
-
-        {/* Processing overlay - covers entire workspace */}
-        {status === "processing" && (
-          <div className="processing-layer">
-            <span className="processing-orbit"><Sparkles size={24} /></span>
-            <strong>
-              {usesYouPai
-                ? `YouPai 正在调用 ${imageProviderStatus?.backgroundReplaceModel ?? "GPT Image 2"}`
-                : usesApiModels
-                  ? "APIMODELS 正在调用 GPT Image 2.5"
-                  : usesLovart
-                    ? "Lovart 正在调用 GPT Image 2.5"
-                    : processingText}
-            </strong>
-            <span>
-              {processingSubText}
-              {isBatchMode
-                ? ` · 已完成 ${processedCount}/${sourceImages.length}`
-                : ""}
-              {` · 已等待 ${processingSeconds} 秒`}
-            </span>
-          </div>
-        )}
       </div>
 
       {backgroundPresetEditDraft && (
@@ -2920,6 +2889,30 @@ export function PhotoWorkbench() {
         </div>
       )}
 
+      {completionNotice && (
+        <div className="task-completion-notice" role="status">
+          <span className={completionNotice.canOpenHistory ? "success" : "failed"}>
+            {completionNotice.canOpenHistory ? <Check size={16} /> : <X size={16} />}
+          </span>
+          <div>
+            <strong>{completionNotice.canOpenHistory ? "后台任务已完成" : "后台任务未完成"}</strong>
+            <small>{completionNotice.message}</small>
+          </div>
+          {completionNotice.canOpenHistory && (
+            <button type="button" onClick={openCompletedTaskHistory}>
+              查看历史
+            </button>
+          )}
+          <button
+            className="task-notice-close"
+            type="button"
+            onClick={() => setCompletionNotice(null)}
+            aria-label="关闭任务提示"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
       {toast && <div className="toast" role="status"><Check size={15} />{toast}</div>}
     </main>
   );

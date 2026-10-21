@@ -126,6 +126,7 @@ select:focus-visible,
   gap: 8px;
 }
 
+.task-trigger,
 .history-trigger,
 .settings-trigger {
   height: 36px;
@@ -143,12 +144,14 @@ select:focus-visible,
   gap: 7px;
 }
 
+.task-trigger:hover,
 .history-trigger:hover,
 .settings-trigger:hover {
   border-color: #d8c9bc;
   background: white;
 }
 
+.task-trigger b,
 .history-trigger b {
   min-width: 18px;
   height: 18px;
@@ -160,6 +163,270 @@ select:focus-visible,
   font-weight: 800;
   display: grid;
   place-items: center;
+}
+
+.task-trigger.active {
+  color: #9a4c32;
+  border-color: rgba(230, 99, 59, 0.32);
+  background: rgba(255, 241, 234, 0.9);
+}
+
+.task-trigger.active svg {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.task-popover {
+  position: fixed;
+  top: 60px;
+  right: 28px;
+  z-index: 29;
+  width: min(390px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid rgba(222, 213, 202, 0.92);
+  border-radius: 16px;
+  background: rgba(255, 253, 250, 0.98);
+  box-shadow: 0 20px 55px rgba(48, 39, 30, 0.2);
+  backdrop-filter: blur(18px);
+  animation: dialog-in 160ms ease-out;
+}
+
+.task-popover-header {
+  padding: 15px 16px 13px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.task-popover-header > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.task-popover-header strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.task-popover-header small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.task-popover-header > button,
+.task-notice-close {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  color: #8c8277;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.task-popover-header > button:hover,
+.task-notice-close:hover {
+  background: #f4eee8;
+}
+
+.task-popover-empty {
+  min-height: 128px;
+  padding: 24px;
+  color: #9b9187;
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+}
+
+.task-list {
+  max-height: min(520px, calc(100vh - 100px));
+  padding: 8px;
+  overflow-y: auto;
+  display: grid;
+  gap: 7px;
+}
+
+.task-item {
+  padding: 11px 12px;
+  border: 1px solid #ece4dc;
+  border-radius: 12px;
+  background: white;
+  display: grid;
+  gap: 8px;
+}
+
+.task-item.processing,
+.task-item.queued {
+  border-color: rgba(230, 99, 59, 0.25);
+  background: #fffaf7;
+}
+
+.task-item-heading,
+.task-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.task-item-heading > span {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.task-item-heading strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-item-heading small,
+.task-item-meta {
+  color: #9a9086;
+  font-size: 9px;
+}
+
+.task-item-heading > b {
+  flex: 0 0 auto;
+  color: #81776e;
+  font-size: 9px;
+}
+
+.task-item.processing .task-item-heading > b,
+.task-item.queued .task-item-heading > b {
+  color: var(--accent);
+}
+
+.task-item.completed .task-item-heading > b {
+  color: #5c9476;
+}
+
+.task-item.failed .task-item-heading > b {
+  color: #b94f47;
+}
+
+.task-progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eee7df;
+}
+
+.task-progress i {
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ef7650, #f5a37f);
+  display: block;
+  transition: width 280ms ease;
+}
+
+.task-progress.active i {
+  min-width: 5%;
+  background-size: 24px 100%;
+  animation: task-progress-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes task-progress-pulse {
+  50% { opacity: 0.58; }
+}
+
+.task-item p {
+  margin: 0;
+  color: #b55249;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.task-history-link {
+  width: fit-content;
+  padding: 0;
+  color: #8e593f;
+  border: 0;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.task-completion-notice {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 31;
+  width: min(440px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid rgba(222, 213, 202, 0.95);
+  border-radius: 14px;
+  background: rgba(255, 253, 250, 0.98);
+  box-shadow: 0 16px 44px rgba(48, 39, 30, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: toast-in-right 180ms ease-out;
+}
+
+.task-completion-notice > span {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 auto;
+  color: white;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+}
+
+.task-completion-notice > span.success { background: #68a282; }
+.task-completion-notice > span.failed { background: #bd6258; }
+
+.task-completion-notice > div {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.task-completion-notice strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.task-completion-notice small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.task-completion-notice > button:not(.task-notice-close) {
+  height: 30px;
+  padding: 0 11px;
+  flex: 0 0 auto;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ink);
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@keyframes toast-in-right {
+  from { opacity: 0; transform: translateY(8px); }
 }
 
 .settings-trigger i {
@@ -3287,6 +3554,7 @@ select:focus-visible,
     display: none;
   }
 
+  .task-trigger,
   .history-trigger,
   .settings-trigger {
     width: 36px;
@@ -3294,12 +3562,14 @@ select:focus-visible,
     justify-content: center;
   }
 
+  .task-trigger span,
   .history-trigger span,
   .settings-trigger span,
   .settings-trigger i {
     display: none;
   }
 
+  .task-trigger b,
   .history-trigger b {
     position: absolute;
     top: -5px;
@@ -3431,6 +3701,25 @@ select:focus-visible,
   .toast {
     bottom: 74px;
     white-space: nowrap;
+  }
+
+  .task-popover {
+    top: 54px;
+    right: 8px;
+    width: calc(100vw - 16px);
+  }
+
+  .task-completion-notice {
+    right: 10px;
+    bottom: 76px;
+    width: calc(100vw - 20px);
+  }
+
+  .task-completion-notice small {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .settings-backdrop {
