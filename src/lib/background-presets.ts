@@ -78,6 +78,10 @@ const BACKGROUND_PLACEMENT_CONFIG: Record<
   "beijing-tsinghua-university-gate-vertical": ["A", "full-body"],
   "beijing-old-summer-palace-ruins-vertical": ["A", "full-body"],
   "beijing-great-hall-of-people-wide": ["C", "half-body"],
+  "paris-arc-de-triomphe-vertical": ["A", "full-body"],
+  "giza-pyramids-vertical": ["A", "full-body"],
+  "london-big-ben-westminster-vertical": ["C", "half-body"],
+  "new-york-statue-of-liberty-vertical": ["C", "half-body"],
 };
 
 const GROUNDLESS_OVERRIDE_MARKERS = [
@@ -662,5 +666,61 @@ export const BACKGROUND_PRESETS: BackgroundPreset[] = [
     monogram: "堂",
     accent: "#a48a57",
     tint: "#ece2cd",
+  },
+  {
+    id: "paris-arc-de-triomphe-vertical",
+    title: "巴黎凯旋门",
+    location: "法国 · 巴黎戴高乐广场",
+    summary: "凯旋门、复古路灯与石板广场，适合完整城市旅行人像",
+    prompt:
+      "场景：图2巴黎凯旋门、戴高乐广场石板地面、左侧复古路灯与街牌、远处游客和车辆。清理：图2原人物只用于标记待清理区域，不作为动作或脸部朝向参考；移除该人物及眼镜、挂绳、随身物品和接触阴影，连续补全被遮挡的路灯底座、石板路与背景，不改写街牌。落位：新人物优先放在原站位附近的下部前景，依据路灯、地砖与凯旋门透视确定尺度，但姿势、身体朝向和头部角度完全以图1为准，不模仿图2人物侧脸背靠路灯的动作；图1是正脸就保持正脸，图1是侧脸就保持侧脸。人物不必依靠或接触路灯，不进入车道，保留凯旋门主体。裁切：图1脚部完整时自然落在石板地面，否则从画面底边裁切，不补脚。",
+    assetPath: "/background-presets/paris-arc-de-triomphe-vertical.jpeg",
+    thumbnailPath: "/background-presets/thumbnails/paris-arc-de-triomphe-vertical.jpeg",
+    assetFileName: "paris-arc-de-triomphe-vertical.jpeg",
+    monogram: "凯",
+    accent: "#6f625b",
+    tint: "#e4ddd5",
+  },
+  {
+    id: "giza-pyramids-vertical",
+    title: "吉萨金字塔群",
+    location: "埃及 · 吉萨高原",
+    summary: "金字塔、沙漠与远处驼队，适合开阔的旅行纪念照",
+    prompt:
+      "场景：图2吉萨金字塔群、前景沙地、浅蓝天空与左下远处驼队。清理：移除右下原男性及帽子、眼镜、披巾、衣物和原遮挡，连续补全其后的金字塔石块、沙地与天空；保留远处驼队。落位：新人物优先放在原人物附近的右下沙地前景，依据沙纹、驼队和金字塔尺度确定距离，不站入金字塔石构或远处驼队。裁切：图1脚部完整时可缩小后自然落在沙地，否则采用四分之三身或底边裁切，不凭空补脚。",
+    assetPath: "/background-presets/giza-pyramids-vertical.jpeg",
+    thumbnailPath: "/background-presets/thumbnails/giza-pyramids-vertical.jpeg",
+    assetFileName: "giza-pyramids-vertical.jpeg",
+    monogram: "塔",
+    accent: "#9a7952",
+    tint: "#ead9bd",
+  },
+  {
+    id: "london-big-ben-westminster-vertical",
+    title: "伦敦大本钟与威斯敏斯特桥",
+    location: "英国 · 伦敦泰晤士河畔",
+    summary: "大本钟、威斯敏斯特桥与泰晤士河，适合前景半身人像",
+    prompt:
+      "场景：图2大本钟、威斯敏斯特桥、泰晤士河、对岸建筑与阴云天空。清理：移除右下原男性及眼镜、衣物、包和原遮挡，连续补全其后的河面、桥体和石质栏墙，保留桥上远处游客。落位：前景没有可见路面，新人物只能作为栏墙这一侧的镜头前景放在右下或下部靠侧，采用半身或大半身，不得进入河面、桥体或对岸建筑。裁切：由画面底边自然截出躯干，不生成脚部，保留大本钟和主要桥拱。",
+    assetPath: "/background-presets/london-big-ben-westminster-vertical.jpeg",
+    thumbnailPath: "/background-presets/thumbnails/london-big-ben-westminster-vertical.jpeg",
+    assetFileName: "london-big-ben-westminster-vertical.jpeg",
+    monogram: "钟",
+    accent: "#596574",
+    tint: "#d9dfe4",
+  },
+  {
+    id: "new-york-statue-of-liberty-vertical",
+    title: "纽约自由女神像",
+    location: "美国 · 纽约自由岛",
+    summary: "自由女神像、基座与深蓝天空，适合低机位半身纪念照",
+    prompt:
+      "场景：图2低机位仰拍的自由女神像、石质基座、台阶、金属栏杆与深蓝天空。清理：移除下部中央原男性及眼镜、衣物、手表和原遮挡，连续补全其后的基座、台阶、栏杆与天空；远处小游客可保留。落位：没有清晰可站立地面，新人物只作为栏杆前的镜头前景放在下部中央或靠侧，采用半身或大半身，不得站到基座、台阶、栏杆或雕像上。裁切：由画面底边自然截出躯干，不补脚，完整保留雕像头部、火炬和主要轮廓。",
+    assetPath: "/background-presets/new-york-statue-of-liberty-vertical.jpeg",
+    thumbnailPath: "/background-presets/thumbnails/new-york-statue-of-liberty-vertical.jpeg",
+    assetFileName: "new-york-statue-of-liberty-vertical.jpeg",
+    monogram: "自",
+    accent: "#397b86",
+    tint: "#d0e3e1",
   },
 ];
