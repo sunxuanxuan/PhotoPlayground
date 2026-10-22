@@ -45,6 +45,7 @@ const BACKGROUND_PLACEMENT_CONFIG: Record<
   "beijing-wumen": ["A", "full-body"],
   "beijing-great-wall": ["A", "full-body"],
   "beijing-temple-of-heaven": ["A", "full-body"],
+  "beijing-temple-of-heaven-close-plaza-vertical": ["A", "full-body"],
   "beijing-birds-nest": ["A", "full-body"],
   "beijing-universal-studios": ["A", "full-body"],
   "shanghai-lujiazui": ["B", "three-quarter"],
@@ -204,6 +205,20 @@ export const BACKGROUND_PRESETS: BackgroundPreset[] = [
     monogram: "坛",
     accent: "#315f83",
     tint: "#c9dde4",
+  },
+  {
+    id: "beijing-temple-of-heaven-close-plaza-vertical",
+    title: "天坛祈年殿 · 近景广场",
+    location: "北京 · 天坛公园",
+    summary: "祈年殿近景、汉白玉台基与石板广场，适合自然旅行人像",
+    prompt:
+      "场景：图2近距离祈年殿主体、蓝色琉璃瓦、金顶、蓝底金字匾额、汉白玉台基栏杆、台阶、远处游客与前景石板广场。清理：图2右下原男性只用于标记待清理区域，不作为身份、表情、动作或脸部朝向参考；移除该人物及其服装、相机、镜头、背带、随身物和原遮挡，连续补全后方殿体、栏杆、台阶、地面与天空，保留匾额及远处游客。落位：新人物优先放在下部右侧或靠侧的真实石板地面，依据栏杆、台阶和地砖透视确定尺度；姿势、身体朝向、表情和头部角度完全以图1为准，图1是正脸就保持正脸，图1是侧脸就保持侧脸，不模仿图2原人物动作。人物不得站入台阶、栏杆或殿体，保留祈年殿主体和匾额。裁切：图1脚部完整时可全身或四分之三身自然落地；脚部不完整时从画面底边在原身体范围内裁切，不补脚。",
+    assetPath: "/background-presets/beijing-temple-of-heaven-close-plaza-vertical.jpeg",
+    thumbnailPath: "/background-presets/thumbnails/beijing-temple-of-heaven-close-plaza-vertical.jpeg",
+    assetFileName: "beijing-temple-of-heaven-close-plaza-vertical.jpeg",
+    monogram: "坛",
+    accent: "#476b88",
+    tint: "#d6e0e5",
   },
   {
     id: "beijing-birds-nest",
